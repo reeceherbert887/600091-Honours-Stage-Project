@@ -1,0 +1,23 @@
+# Python virtual environment
+.venv/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+
+# VS Code local settings
+.vscode/
+
+# Generated telemetry
+data/csv/*.csv
+data/database/*.db
+data/database/*.sqlite
+data/database/*.sqlite3
+
+# Generated graphs and results
+results/graphs/*.png
+results/reports/*
+
+# Temporary files
+*.log
+.DS_Store
