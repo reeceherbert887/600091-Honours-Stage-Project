@@ -6,62 +6,62 @@ import pybullet as p
 import pybullet_data
 
 
-SIMULATION_RATE = 240
-TIME_STEP = 1.0 / SIMULATION_RATE
+Simulation_Rate = 240
+Time_Step = 1.0 / Simulation_Rate
 
-CONTROLLED_JOINTS = [0, 1, 2]
-END_EFFECTOR_LINK = 3
+Controlled_Joints = [0, 1, 2]
+End_Effector_Link = 3
 
-HOME_ANGLES = [
+Home_Angles = [
     math.radians(0),
     math.radians(0),
     math.radians(0),
 ]
 
-PICK_ANGLES = [
+Pick_Angles = [
     math.radians(25),
     math.radians(-55),
     math.radians(35),
 ]
 
-PLACE_ANGLES = [
+Place_Angles = [
     math.radians(100),
     math.radians(-45),
     math.radians(-20),
 ]
 
-RETREAT_ANGLES = [
+Retreat_Angles = [
     math.radians(70),
     math.radians(-20),
     math.radians(10),
 ]
 
-MOVE_TO_PICK_DURATION = 3.0
-PICK_PAUSE_DURATION = 1.0
-MOVE_TO_PLACE_DURATION = 4.0
-PLACE_PAUSE_DURATION = 1.0
-RETREAT_DURATION = 2.0
+Move_To_Pick = 3.0
+Pick_Pause_Duration = 1.0
+Move_To_Place = 4.0
+Place_Pause_Duration = 1.0
+Retreat_Duration = 2.0
 
-PICK_END_TIME = MOVE_TO_PICK_DURATION
+Pick_End_Time = Move_To_Pick
 
-PLACE_START_TIME = (
-    PICK_END_TIME
-    + PICK_PAUSE_DURATION
+Place_Start_Time = (
+    Pick_End_Time
+    + Pick_Pause_Duration
 )
 
-PLACE_END_TIME = (
-    PLACE_START_TIME
-    + MOVE_TO_PLACE_DURATION
+Place_End_Time = (
+    Place_Start_Time
+    + Move_To_Place
 )
 
-RETREAT_START_TIME = (
-    PLACE_END_TIME
-    + PLACE_PAUSE_DURATION
+Retreat_Start_Time = (
+    Place_End_Time
+    + Place_Pause_Duration
 )
 
-TOTAL_DURATION = (
-    RETREAT_START_TIME
-    + RETREAT_DURATION
+Total_Duration = (
+    Retreat_Start_Time
+    + Retreat_Duration
 )
 
 
@@ -98,46 +98,46 @@ def calculate_commanded_angles(elapsed_time):
     """
 
     # Phase 1: move from home to the object.
-    if elapsed_time < PICK_END_TIME:
+    if elapsed_time < Pick_End_Time:
         progress = (
             elapsed_time
-            / MOVE_TO_PICK_DURATION
+            / Move_To_Pick
         )
 
         return interpolate_angles(
-            HOME_ANGLES,
-            PICK_ANGLES,
+            Home_Angles,
+            Pick_Angles,
             progress,
         )
 
     # Phase 2: pause while gripping the object.
-    if elapsed_time < PLACE_START_TIME:
-        return PICK_ANGLES
+    if elapsed_time < Place_Start_Time:
+        return Pick_Angles
 
     # Phase 3: carry the object to the placement position.
-    if elapsed_time < PLACE_END_TIME:
+    if elapsed_time < Place_End_Time:
         progress = (
-            elapsed_time - PLACE_START_TIME
-        ) / MOVE_TO_PLACE_DURATION
+            elapsed_time - Place_Start_Time
+        ) / Move_To_Place
 
         return interpolate_angles(
-            PICK_ANGLES,
-            PLACE_ANGLES,
+            Pick_Angles,
+            Place_Angles,
             progress,
         )
 
     # Phase 4: pause while releasing the object.
-    if elapsed_time < RETREAT_START_TIME:
-        return PLACE_ANGLES
+    if elapsed_time < Retreat_Start_Time:
+        return Place_Angles
 
     # Phase 5: move away from the released object.
     progress = (
-        elapsed_time - RETREAT_START_TIME
-    ) / RETREAT_DURATION
+        elapsed_time - Retreat_Start_Time
+    ) / Retreat_Duration
 
     return interpolate_angles(
-        PLACE_ANGLES,
-        RETREAT_ANGLES,
+        Place_Angles,
+        Retreat_Angles,
         progress,
     )
 
@@ -154,7 +154,7 @@ def set_joint_positions(
     ]
 
     for list_index, joint_id in enumerate(
-        CONTROLLED_JOINTS
+        Controlled_Joints
     ):
         p.setJointMotorControl2(
             bodyUniqueId=robot_id,
@@ -173,7 +173,7 @@ def reset_robot_position(
 ):
     """Immediately place the arm into a configuration."""
     for list_index, joint_id in enumerate(
-        CONTROLLED_JOINTS
+        Controlled_Joints
     ):
         p.resetJointState(
             robot_id,
@@ -190,14 +190,14 @@ def calculate_object_position(robot_id):
     """
     reset_robot_position(
         robot_id,
-        PICK_ANGLES,
+        Pick_Angles,
     )
 
     p.stepSimulation()
 
     end_effector_state = p.getLinkState(
         robot_id,
-        END_EFFECTOR_LINK,
+        End_Effector_Link,
         computeForwardKinematics=True,
     )
 
@@ -215,7 +215,7 @@ def calculate_object_position(robot_id):
 
     reset_robot_position(
         robot_id,
-        HOME_ANGLES,
+        Home_Angles,
     )
 
     return object_position, object_orientation
@@ -288,7 +288,7 @@ def attach_object(
     """
     return p.createConstraint(
         parentBodyUniqueId=robot_id,
-        parentLinkIndex=END_EFFECTOR_LINK,
+        parentLinkIndex=End_Effector_Link,
         childBodyUniqueId=object_id,
         childLinkIndex=-1,
         jointType=p.JOINT_FIXED,
@@ -309,7 +309,7 @@ def print_joint_telemetry(
         elapsed_time
     )
 
-    for joint_id in CONTROLLED_JOINTS:
+    for joint_id in Controlled_Joints:
         joint_state = p.getJointState(
             robot_id,
             joint_id,
@@ -338,16 +338,16 @@ def print_joint_telemetry(
 
 
 def get_phase(elapsed_time):
-    if elapsed_time < PICK_END_TIME:
+    if elapsed_time < Pick_End_Time:
         return "MOVING TO PICK"
 
-    if elapsed_time < PLACE_START_TIME:
+    if elapsed_time < Place_Start_Time:
         return "GRIPPING"
 
-    if elapsed_time < PLACE_END_TIME:
+    if elapsed_time < Place_End_Time:
         return "MOVING OBJECT"
 
-    if elapsed_time < RETREAT_START_TIME:
+    if elapsed_time < Retreat_Start_Time:
         return "RELEASING"
 
     return "RETREATING"
@@ -390,7 +390,7 @@ def main():
     )
 
     p.setGravity(0, 0, -9.81)
-    p.setTimeStep(TIME_STEP)
+    p.setTimeStep(Time_Step)
 
     p.loadURDF("plane.urdf")
 
@@ -404,7 +404,7 @@ def main():
 
     reset_robot_position(
         robot_id,
-        HOME_ANGLES,
+        Home_Angles,
     )
 
     object_position, object_orientation = (
@@ -445,7 +445,7 @@ def main():
 
     try:
         while (
-            simulation_time <= TOTAL_DURATION
+            simulation_time <= Total_Duration
             and p.isConnected()
         ):
             target_angles = calculate_commanded_angles(
@@ -460,7 +460,7 @@ def main():
             # Attach the object when the arm reaches the
             # gripping phase.
             if (
-                simulation_time >= PICK_END_TIME
+                simulation_time >= Pick_End_Time
                 and not object_attached
             ):
                 grip_constraint = attach_object(
@@ -478,7 +478,7 @@ def main():
 
             # Release the object after reaching the destination.
             if (
-                simulation_time >= PLACE_END_TIME
+                simulation_time >= Place_End_Time
                 and object_attached
                 and not object_released
             ):
@@ -512,8 +512,8 @@ def main():
 
                 last_print_time = simulation_time
 
-            simulation_time += TIME_STEP
-            time.sleep(TIME_STEP)
+            simulation_time += Time_Step
+            time.sleep(Time_Step)
 
     except KeyboardInterrupt:
         print()
