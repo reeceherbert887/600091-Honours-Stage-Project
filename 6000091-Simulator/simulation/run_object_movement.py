@@ -1,5 +1,7 @@
 import math
 import time
+import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 import pybullet as p
@@ -336,6 +338,10 @@ def print_joint_telemetry(
         f"({math.degrees(errors[2]):6.2f}° error)"
     )
 
+    # Return the same telemetry values that were printed above so
+    # they can also be written to the SQLite database.
+    return actual_angles, errors
+
 
 def get_phase(elapsed_time):
     if elapsed_time < Pick_End_Time:
@@ -356,6 +362,70 @@ def get_phase(elapsed_time):
 def main():
     simulation_directory = Path(__file__).resolve().parent
     project_directory = simulation_directory.parent
+
+    # Keep the object-movement database in the same directory as
+    # this simulation script.
+    database_path = simulation_directory / "object_movement.db"
+
+    # Open the SQLite database and create a cursor for SQL commands.
+    database_connection = sqlite3.connect(database_path)
+    database_cursor = database_connection.cursor()
+
+    # Create a table containing one summary row for each simulation run.
+    database_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS object_movement_runs (
+        run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT NOT NULL,
+        total_duration REAL,
+        status TEXT
+    )
+    """)
+
+    # Create a telemetry table containing one row for each 0.25-second
+    # sample produced by the simulation.
+    database_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS object_movement_telemetry (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id INTEGER NOT NULL,
+        sample_time REAL NOT NULL,
+        phase TEXT NOT NULL,
+
+        joint_1_angle REAL NOT NULL,
+        joint_1_error REAL NOT NULL,
+
+        joint_2_angle REAL NOT NULL,
+        joint_2_error REAL NOT NULL,
+
+        joint_3_angle REAL NOT NULL,
+        joint_3_error REAL NOT NULL,
+
+        object_attached INTEGER NOT NULL,
+
+        FOREIGN KEY(run_id)
+            REFERENCES object_movement_runs(run_id)
+    )
+    """)
+
+    database_connection.commit()
+
+    # Create a new run entry before the arm starts moving. The returned
+    # run_id links all telemetry samples from this run together.
+    database_cursor.execute("""
+    INSERT INTO object_movement_runs (
+        created_at,
+        total_duration,
+        status
+    )
+    VALUES (?, ?, ?)
+    """, (
+        datetime.now().isoformat(),
+        Total_Duration,
+        "RUNNING"
+    ))
+
+    run_id = database_cursor.lastrowid
+
+    database_connection.commit()
 
     robot_model = (
         project_directory
@@ -504,11 +574,47 @@ def main():
                     simulation_time
                 )
 
-                print_joint_telemetry(
+                # Print the joint telemetry and keep the values so the
+                # exact same sample can be stored in SQLite.
+                actual_angles, errors = print_joint_telemetry(
                     robot_id,
                     simulation_time,
                     phase,
                 )
+
+                # Store this telemetry sample in the object-movement
+                # database. Angles and errors are converted from radians
+                # to degrees so they match the values shown in the terminal.
+                database_cursor.execute("""
+                INSERT INTO object_movement_telemetry (
+                    run_id,
+                    sample_time,
+                    phase,
+                    joint_1_angle,
+                    joint_1_error,
+                    joint_2_angle,
+                    joint_2_error,
+                    joint_3_angle,
+                    joint_3_error,
+                    object_attached
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    run_id,
+                    simulation_time,
+                    phase,
+                    math.degrees(actual_angles[0]),
+                    math.degrees(errors[0]),
+                    math.degrees(actual_angles[1]),
+                    math.degrees(errors[1]),
+                    math.degrees(actual_angles[2]),
+                    math.degrees(errors[2]),
+                    int(object_attached),
+                ))
+
+                # Commit after each displayed sample so the data is visible
+                # in DB Browser while the simulation is running.
+                database_connection.commit()
 
                 last_print_time = simulation_time
 
@@ -520,6 +626,22 @@ def main():
         print("Simulation stopped by user.")
 
     finally:
+        # Mark this database run as complete and store the final duration.
+        database_cursor.execute("""
+        UPDATE object_movement_runs
+        SET
+            total_duration = ?,
+            status = ?
+        WHERE run_id = ?
+        """, (
+            simulation_time,
+            "SUCCESS",
+            run_id,
+        ))
+
+        database_connection.commit()
+        database_connection.close()
+
         if p.isConnected():
             p.disconnect()
 
