@@ -8,9 +8,7 @@ import pybullet as p
 import pybullet_data
 
 
-# ============================================================
 # Simulation_Configuration
-# ============================================================
 
 Simulation_Rate = 240
 Time_Step = 1.0 / Simulation_Rate
@@ -45,9 +43,7 @@ SCENARIOS = [
 ]
 
 
-# ============================================================
 # COMMAND-LINE ARGUMENTS
-# ============================================================
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -64,9 +60,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-# ============================================================
 # MOVEMENT GENERATION
-# ============================================================
 
 def smooth_trajectory(progress):
     """
@@ -103,9 +97,7 @@ def calculate_commanded_angles(elapsed_time):
     return commanded_angles
 
 
-# ============================================================
 # SYNTHETIC SENSOR MODELS
-# ============================================================
 
 def estimate_current(
     torque,
@@ -232,9 +224,7 @@ def estimate_vibration(
     return max(0.0, vibration)
 
 
-# ============================================================
 # ROBOT CONFIGURATION AND CONTROL
-# ============================================================
 
 def configure_robot_for_scenario(robot_id, scenario):
     """
@@ -323,9 +313,7 @@ def apply_joint_control(
         )
 
 
-# ============================================================
 # TERMINAL DISPLAY
-# ============================================================
 
 def print_heading(scenario):
     print()
@@ -350,9 +338,7 @@ def print_heading(scenario):
     print("-" * 130)
 
 
-# ============================================================
 # MAIN SIMULATION
-# ============================================================
 
 def main():
     args = parse_arguments()
