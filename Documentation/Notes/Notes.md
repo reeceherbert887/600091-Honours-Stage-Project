@@ -8,12 +8,7 @@ To open old niryostudio
 cd ~/Downloads/NiryoStudio-4.0.1/NiryoStudio-linux-x64_v4.0.1
 ./NiryoStudio
 
-```mermaid
-flowchart LR
-    A["Commanded Motion"] --> B["Robot Controller"] --> C["Joint Actuation"] --> D["Physical Movement"]
+wifi password:
+niryoone
+niryorobot
 
-    E["Physical/Controller State"] --> F["Telemetry"] --> G["AEGIS"] --> H["Condition Assessment"]
-
-    D -. monitors .-> E
-    B -. feedback .-> E
-```
