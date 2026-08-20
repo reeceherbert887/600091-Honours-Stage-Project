@@ -8,6 +8,10 @@ To open old niryostudio
 cd ~/Downloads/NiryoStudio-4.0.1/NiryoStudio-linux-x64_v4.0.1
 ./NiryoStudio
 
+reece@day-to-day:~/Applications$ /opt/NiryoStudio/NiryoStudio-linux-x64_v4.0.1/NiryoStudio --no-sandbox
+
+
+
 wifi password:
 niryoone
 niryorobot
