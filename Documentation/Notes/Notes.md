@@ -16,3 +16,7 @@ wifi password:
 niryoone
 niryorobot
 
+
+Project Libre
+/opt/projectlibre/bin/ProjectLibre
+
